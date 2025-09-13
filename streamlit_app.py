@@ -5,6 +5,7 @@ import streamlit as st
 from PIL import Image
 from io import BytesIO
 
+st.write("API key loaded?",bool(os.getenv("OPENAI_API_KEY")))
 # New OpenAI client
 from openai import OpenAI
 
