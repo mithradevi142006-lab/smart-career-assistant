@@ -8,7 +8,7 @@ import os
 # ---------- Load API key safely ----------
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
+st.write("API Key loaded?",bool(openai.api_key))
 # ---------- Page Config ----------
 st.set_page_config(
     page_title="NXT Wave Buildathon Prototype",
