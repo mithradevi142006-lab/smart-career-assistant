@@ -4,7 +4,6 @@ from PIL import Image
 import openai
 
 # ---------- OpenAI API Key ----------
-openai.api_key = "YOUR_OPENAI_API_KEY"
 
 # ---------- App Title ----------
 st.set_page_config(page_title="NXT Wave Buildathon Prototype", layout="centered")
