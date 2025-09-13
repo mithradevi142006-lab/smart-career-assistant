@@ -1,69 +1,55 @@
 # streamlit_app.py
+import os
+from dotenv import load_dotenv
 import streamlit as st
 from PIL import Image
-import openai
-from dotenv import load_dotenv
-import os
+from io import BytesIO
+
+# New OpenAI client
+from openai import OpenAI
 
 # ---------- Load API key safely ----------
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-st.write("API Key loaded?",bool(openai.api_key))
-# ---------- Page Config ----------
-st.set_page_config(
-    page_title="NXT Wave Buildathon Prototype",
-    layout="wide"
-)
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_KEY:
+    st.error("Missing OPENAI_API_KEY in .env. Create a .env file with OPENAI_API_KEY=sk-...")
+    st.stop()
+
+client = OpenAI(api_key=OPENAI_KEY)
+
+# ---------- Page config ----------
+st.set_page_config(page_title="NXT Wave Buildathon Prototype", layout="wide")
 st.title("🚀 NXT Wave Buildathon Prototype")
-if st.button("Test GPT"):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": "Hello GPT, are you working?"}]
-        )
-        st.write(response.choices[0].message["content"])
-    except Exception as e:
-        st.error(f"Error: {e}")
-st.markdown("A polished prototype showing GPT, DALL·E, and Whisper integration")
+st.markdown("Polished prototype using the new OpenAI Python client (chat, images, audio)")
 
 # ---------- Instructions ----------
 st.markdown(
     """
-    <div style="padding:15px; border-radius:10px; background-color:#e0f7fa; margin-bottom:20px;">
-    <h4>📌 How to Use This Prototype:</h4>
-    <ol>
-        <li><b>Chat with GPT:</b> Type your query and click "Generate GPT Response".</li>
-        <li><b>Generate Images:</b> Enter description and click "Generate Image".</li>
-        <li><b>Transcribe Audio:</b> Upload an audio file to get transcription.</li>
+    <div style="padding:12px; border-radius:8px; background:#e8f6ff; margin-bottom:18px;">
+    <b>How to use:</b>
+    <ol style="margin:6px 0 0 18px;">
+      <li>Chat with GPT: type a query and click <i>Generate GPT Response</i>.</li>
+      <li>Generate Image: enter an image description and click <i>Generate Image</i>.</li>
+      <li>Transcribe Audio: upload an audio file and wait for the transcription.</li>
     </ol>
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
-# ---------- CSS ----------
+# ---------- Simple styling ----------
 st.markdown(
     """
     <style>
-    .card {
-        padding: 20px;
-        border-radius: 15px;
-        background-color: #f5f5f5;
-        margin-bottom: 20px;
-        box-shadow: 2px 2px 10px #ccc;
-    }
-    div[data-baseweb="input"] > input {
-        text-align: center;
-    }
-    .stButton>button {
-        width: 100%;
-    }
+    .card { padding:18px; border-radius:12px; background:#f7f7f7; box-shadow:2px 2px 8px #eee; margin-bottom:18px;}
+    div[data-baseweb="input"] > input { text-align:center; }
+    .stButton>button { width:100%; }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
-# ---------- Columns Layout ----------
+# ---------- Layout ----------
 col1, col2, col3 = st.columns(3)
 
 # ---------- GPT Chat ----------
@@ -72,59 +58,76 @@ with col1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     gpt_input = st.text_input("Type your query...", key="gpt_input")
     if st.button("Generate GPT Response", key="gpt_btn"):
-        if gpt_input.strip() != "":
-            with st.spinner("Generating GPT response..."):
+        if not gpt_input.strip():
+            st.warning("Please enter a query.")
+        else:
+            with st.spinner("Contacting GPT..."):
                 try:
-                    response = openai.ChatCompletion.create(
-                        model="gpt-4",
+                    resp = client.chat.completions.create(
+                        model="gpt-4o-mini",
                         messages=[{"role": "user", "content": gpt_input}],
                         temperature=0.7,
+                        max_tokens=800,
                     )
+                    # New client response structure:
+                    answer = resp.choices[0].message.get("content") or resp.choices[0].message.get("text")
                     st.success("✅ GPT Response:")
-                    st.write(response.choices[0].message['content'])
+                    st.write(answer)
                 except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
-            st.warning("Please enter a query.")
+                    st.error(f"GPT Error: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------- DALL·E Image ----------
+# ---------- DALL·E / Images ----------
 with col2:
-    st.subheader("🖼️ Generate Image")
+    st.subheader("🖼️ Generate Image (DALL·E-style)")
     st.markdown('<div class="card">', unsafe_allow_html=True)
     image_prompt = st.text_input("Describe the image...", key="img_input")
     if st.button("Generate Image", key="img_btn"):
-        if image_prompt.strip() != "":
+        if not image_prompt.strip():
+            st.warning("Please enter an image description.")
+        else:
             with st.spinner("Generating image..."):
                 try:
-                    img_response = openai.Image.create(
+                    img_resp = client.images.generate(
+                        model="gpt-image-1",
                         prompt=image_prompt,
-                        n=1,
-                        size="512x512"
+                        size="512x512",
+                        # optionally add: background="transparent"
                     )
-                    img_url = img_response['data'][0]['url']
-                    image = Image.open(openai.util.url_to_image(img_url))
-                    st.image(image, caption="Generated by DALL·E")
+                    # image data usually available at img_resp.data[0].url
+                    img_url = img_resp.data[0].url
+                    # fetch and display without relying on external libs (Streamlit can show from URL)
+                    st.image(img_url, caption="Generated by image model", use_column_width=True)
                 except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
-            st.warning("Please enter a description.")
+                    st.error(f"Image Error: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------- Whisper Audio ----------
+# ---------- Whisper / Audio Transcription ----------
 with col3:
-    st.subheader("🎤 Transcribe Audio")
+    st.subheader("🎤 Transcribe Audio (Whisper)")
     st.markdown('<div class="card">', unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "m4a"], key="audio_uploader")
     if uploaded_file:
-        with st.spinner("Transcribing audio..."):
-            try:
-                transcript = openai.Audio.transcriptions.create(
-                    model="whisper-1",
-                    file=uploaded_file
-                )
-                st.success("✅ Transcription:")
-                st.write(transcript.text)
-            except Exception as e:
-                st.error(f"Error: {e}")
+        if st.button("Transcribe Audio", key="transcribe_btn"):
+            with st.spinner("Transcribing audio..."):
+                try:
+                    # Ensure we pass a file-like object; UploadedFile supports .read()
+                    # The new client accepts file=BytesIO(...) and filename param if needed
+                    audio_bytes = uploaded_file.read()
+                    audio_file = BytesIO(audio_bytes)
+                    audio_file.name = uploaded_file.name  # set a filename attribute if required
+                    transcript = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file
+                    )
+                    # transcript object likely has .text
+                    text = getattr(transcript, "text", None) or transcript.get("text")
+                    st.success("✅ Transcription:")
+                    st.write(text)
+                except Exception as e:
+                    st.error(f"Transcription Error: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------- Footer ----------
+st.markdown("<div style='margin-top:18px; font-size:12px; color:#666;'>Keep your API key private (use .env) — good luck with your buildathon!</div>", unsafe_allow_html=True)
+
