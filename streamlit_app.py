@@ -8,30 +8,38 @@ import openai
 st.set_page_config(page_title="Smart Career Assistant", page_icon="🎯", layout="wide")
 
 st.title("Smart Career Assistant")
-st.write("Welcome! This is your buildathon prototype. Use the features below to interact with your assistant.")
+st.write("Welcome! Ask any career-related question or explore tips below.")
 
 # -------------------------
 # User Input Section
-# -------------------------
 user_input = st.text_input("Ask me a career-related question:")
 
 if user_input:
-    # Replace this with your GPT/OpenAI API code from Replit
-    # Example placeholder response
-    response = f"Your question: '{user_input}' has been received. (Replace this with GPT answer!)"
-    st.write(response)
+    try:
+        # Use OpenAI API key from Streamlit secrets
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+        # Call GPT
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # change to gpt-4 if you have access
+            messages=[
+                {"role": "system", "content": "You are a helpful career assistant."},
+                {"role": "user", "content": user_input}
+            ]
+        )
+
+        answer = completion.choices[0].message.content
+        st.write(answer)
+
+    except Exception as e:
+        st.write("Error:", e)
 
 # -------------------------
-# Optional: Add more features
-# -------------------------
-# You can add buttons, images, charts, or DALL·E/Whisper API features here
-# Example:
+# Optional: Career Tips Button
 if st.button("Show Career Tips"):
-    st.write("1. Keep learning new skills\n2. Build a strong portfolio\n3. Network actively")
-
-# -------------------------
-# Footer
-st.write("---")
-st.write("Prototype by Mithra | NXT Wave Buildathon 2025")
-
-# You can add more code from your Replit project here
+    st.write("""
+    1. Keep learning new skills.
+    2. Build a strong portfolio.
+    3. Network actively.
+    4. Stay updated with industry trends.
+    """)
