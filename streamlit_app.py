@@ -15,6 +15,15 @@ st.set_page_config(
     layout="wide"
 )
 st.title("🚀 NXT Wave Buildathon Prototype")
+if st.button("Test GPT"):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": "Hello GPT, are you working?"}]
+        )
+        st.write(response.choices[0].message["content"])
+    except Exception as e:
+        st.error(f"Error: {e}")
 st.markdown("A polished prototype showing GPT, DALL·E, and Whisper integration")
 
 # ---------- Instructions ----------
