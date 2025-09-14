@@ -1,74 +1,96 @@
 import streamlit as st
 
-# Page setup
-st.set_page_config(page_title="AI Buildathon Demo", page_icon="🤖", layout="centered")
+# --------- PAGE CONFIG ---------
+st.set_page_config(
+    page_title="AI Buildathon Demo",
+    page_icon="🤖",
+    layout="wide"
+)
 
-st.title("🤖 AI Buildathon Demo")
-st.write("This is a **demo version**. Interact with it and see outputs instantly!")
+# --------- HEADER ---------
+st.markdown(
+    """
+    <h1 style='text-align: center; color: #4B0082;'>🤖 AI Buildathon Demo</h1>
+    <p style='text-align: center; font-size:18px;'>Interactive AI assistant demo for resumes, LinkedIn posts, career advice, and image generation (placeholder)</p>
+    """, unsafe_allow_html=True
+)
+st.markdown("---")
 
-# Tabs for different functionalities
-tab1, tab2 = st.tabs(["Resume & Posts", "AI Image Generator"])
+# --------- TABS ---------
+tab1, tab2 = st.tabs(["💼 Resume & LinkedIn Assistant", "🖼️ AI Image Generator"])
 
-# ----------- Tab 1: Resume & LinkedIn Post Demo -----------
+# --------- TAB 1: RESUME & POSTS ---------
 with tab1:
-    st.header("💼 Resume & LinkedIn Post Assistant")
-    
-    # Sidebar task selection (for Tab 1)
+    st.subheader("Choose a Task")
     task = st.selectbox(
-        "Choose Task",
+        "",
         ["Generate Resume Tip", "Generate LinkedIn Post", "Career Advice"]
     )
 
-    # Input box
-    user_input = st.text_input("Type your query here:")
+    st.markdown("**Type your query below:**")
+    user_input = st.text_input("", placeholder="e.g., internship resume, project post, coding tips")
 
-    # Predefined responses
+    # Expanded predefined responses
     responses = {
         "Generate Resume Tip": {
-            "default": "Make sure your resume is concise and highlights your key achievements.",
-            "internship": "For internships, focus on your projects and any relevant coursework.",
-            "job": "For job applications, emphasize your professional experience and measurable results."
+            "default": "✅ Make your resume concise and highlight achievements.",
+            "internship": "💡 Focus on projects and coursework for internships.",
+            "job": "💼 Emphasize professional experience and measurable results for jobs.",
+            "skills": "🛠️ Highlight relevant technical and soft skills prominently.",
+            "projects": "📁 Include 2-3 impactful projects with results and technologies used.",
+            "format": "📄 Use clear headings, bullet points, and consistent formatting.",
+            "education": "🎓 Mention GPA, honors, and relevant courses for academics."
         },
         "Generate LinkedIn Post": {
-            "default": "Sharing your achievements on LinkedIn increases your professional visibility!",
-            "promotion": "Excited to share my recent promotion! Grateful for my team and mentors.",
-            "project": "Proud to announce the completion of my latest project! Collaboration makes the dream work."
+            "default": "🌟 Sharing your achievements on LinkedIn boosts visibility.",
+            "promotion": "🎉 Excited to share my promotion! Thanks to my team.",
+            "project": "🚀 Proud of completing my latest project. Collaboration wins!",
+            "achievement": "🏆 Celebrating milestones increases engagement with your network.",
+            "newjob": "💼 Excited to join my new company! Looking forward to contributing.",
+            "learning": "📚 Sharing recent learning or certification can inspire your connections.",
+            "thankyou": "🙏 Appreciate mentors and colleagues in your post for authenticity."
         },
         "Career Advice": {
-            "default": "Keep learning new skills and networking with professionals in your field.",
-            "coding": "Practice coding regularly and contribute to open-source projects.",
-            "interview": "Prepare with mock interviews and understand the company thoroughly."
+            "default": "📚 Keep learning and networking in your field.",
+            "coding": "💻 Practice coding and contribute to open-source projects.",
+            "interview": "📝 Prepare with mock interviews and research companies.",
+            "resume": "📝 Tailor your resume to each job description.",
+            "networking": "🤝 Attend meetups and connect with professionals online.",
+            "skills": "🛠️ Learn in-demand technologies relevant to your career path.",
+            "growth": "🚀 Take small steps daily; consistency beats speed in long-term growth."
         }
     }
 
-    # Function to get output
     def get_response(task, query):
-        query_lower = query.lower()
-        for key, response in responses[task].items():
-            if key in query_lower:
-                return response
+        q = query.lower()
+        for key, resp in responses[task].items():
+            if key in q:
+                return resp
         return responses[task]["default"]
 
-    # Show output
     if user_input:
-        output = get_response(task, user_input)
-        st.markdown(f"**AI Response:** {output}")
+        result = get_response(task, user_input)
+        st.success(result)
     else:
-        st.write("Enter something above to get a response.")
+        st.info("Type something above to get a response!")
 
-# ----------- Tab 2: Image Generator Demo -----------
+# --------- TAB 2: IMAGE GENERATOR ---------
 with tab2:
-    st.header("🖼️ AI Image Generator (Demo)")
-    prompt = st.text_input("Enter image prompt:")
+    st.subheader("AI Image Generator (Demo)")
+    st.markdown("This is a **placeholder demo** simulating AI image generation.")
 
+    img_prompt = st.text_input("Enter image prompt", placeholder="e.g., futuristic city, robot art")
     if st.button("Generate Image"):
-        if prompt:
-            # Placeholder image (no API)
-            st.image("https://via.placeholder.com/400x250.png?text=AI+Generated+Image", 
-                     caption=f"Image for: {prompt}")
+        if img_prompt:
+            st.image("https://via.placeholder.com/500x300.png?text=AI+Generated+Image",
+                     caption=f"Generated image for: {img_prompt}", use_column_width=True)
+            st.success("✅ Image generated successfully (placeholder)")
         else:
-            st.warning("Type something first!")
+            st.warning("⚠️ Please enter a prompt first!")
 
-# Footer
+# --------- STYLISH FOOTER ---------
 st.markdown("---")
-st.markdown("📝 **Note:** This is a demo version for buildathon submission. No real AI API is used. All outputs are predefined or placeholders.")
+st.markdown(
+    "<p style='text-align: center; font-size:14px;'>📝 Demo version for buildathon submission. No real AI API is used. All outputs are predefined or placeholder images.</p>",
+    unsafe_allow_html=True
+)
