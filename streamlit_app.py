@@ -1,134 +1,74 @@
-# streamlit_app.py
-import os
-from dotenv import load_dotenv
 import streamlit as st
-from PIL import Image
-from io import BytesIO
 
-st.write("API key loaded?",bool(os.getenv("OPENAI_API_KEY")))
-# New OpenAI client
-from openai import OpenAI
+# Page setup
+st.set_page_config(page_title="AI Buildathon Demo", page_icon="🤖", layout="centered")
 
-# ---------- Load API key safely ----------
-load_dotenv()
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_KEY:
-    st.error("Missing OPENAI_API_KEY in .env. Create a .env file with OPENAI_API_KEY=sk-...")
-    st.stop()
+st.title("🤖 AI Buildathon Demo")
+st.write("This is a **demo version**. Interact with it and see outputs instantly!")
 
-client = OpenAI(api_key=OPENAI_KEY)
+# Tabs for different functionalities
+tab1, tab2 = st.tabs(["Resume & Posts", "AI Image Generator"])
 
-# ---------- Page config ----------
-st.set_page_config(page_title="NXT Wave Buildathon Prototype", layout="wide")
-st.title("🚀 NXT Wave Buildathon Prototype")
-st.markdown("Polished prototype using the new OpenAI Python client (chat, images, audio)")
+# ----------- Tab 1: Resume & LinkedIn Post Demo -----------
+with tab1:
+    st.header("💼 Resume & LinkedIn Post Assistant")
+    
+    # Sidebar task selection (for Tab 1)
+    task = st.selectbox(
+        "Choose Task",
+        ["Generate Resume Tip", "Generate LinkedIn Post", "Career Advice"]
+    )
 
-# ---------- Instructions ----------
-st.markdown(
-    """
-    <div style="padding:12px; border-radius:8px; background:#e8f6ff; margin-bottom:18px;">
-    <b>How to use:</b>
-    <ol style="margin:6px 0 0 18px;">
-      <li>Chat with GPT: type a query and click <i>Generate GPT Response</i>.</li>
-      <li>Generate Image: enter an image description and click <i>Generate Image</i>.</li>
-      <li>Transcribe Audio: upload an audio file and wait for the transcription.</li>
-    </ol>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+    # Input box
+    user_input = st.text_input("Type your query here:")
 
-# ---------- Simple styling ----------
-st.markdown(
-    """
-    <style>
-    .card { padding:18px; border-radius:12px; background:#f7f7f7; box-shadow:2px 2px 8px #eee; margin-bottom:18px;}
-    div[data-baseweb="input"] > input { text-align:center; }
-    .stButton>button { width:100%; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+    # Predefined responses
+    responses = {
+        "Generate Resume Tip": {
+            "default": "Make sure your resume is concise and highlights your key achievements.",
+            "internship": "For internships, focus on your projects and any relevant coursework.",
+            "job": "For job applications, emphasize your professional experience and measurable results."
+        },
+        "Generate LinkedIn Post": {
+            "default": "Sharing your achievements on LinkedIn increases your professional visibility!",
+            "promotion": "Excited to share my recent promotion! Grateful for my team and mentors.",
+            "project": "Proud to announce the completion of my latest project! Collaboration makes the dream work."
+        },
+        "Career Advice": {
+            "default": "Keep learning new skills and networking with professionals in your field.",
+            "coding": "Practice coding regularly and contribute to open-source projects.",
+            "interview": "Prepare with mock interviews and understand the company thoroughly."
+        }
+    }
 
-# ---------- Layout ----------
-col1, col2, col3 = st.columns(3)
+    # Function to get output
+    def get_response(task, query):
+        query_lower = query.lower()
+        for key, response in responses[task].items():
+            if key in query_lower:
+                return response
+        return responses[task]["default"]
 
-# ---------- GPT Chat ----------
-with col1:
-    st.subheader("💬 Chat with GPT")
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    gpt_input = st.text_input("Type your query...", key="gpt_input")
-    if st.button("Generate GPT Response", key="gpt_btn"):
-        if not gpt_input.strip():
-            st.warning("Please enter a query.")
+    # Show output
+    if user_input:
+        output = get_response(task, user_input)
+        st.markdown(f"**AI Response:** {output}")
+    else:
+        st.write("Enter something above to get a response.")
+
+# ----------- Tab 2: Image Generator Demo -----------
+with tab2:
+    st.header("🖼️ AI Image Generator (Demo)")
+    prompt = st.text_input("Enter image prompt:")
+
+    if st.button("Generate Image"):
+        if prompt:
+            # Placeholder image (no API)
+            st.image("https://via.placeholder.com/400x250.png?text=AI+Generated+Image", 
+                     caption=f"Image for: {prompt}")
         else:
-            with st.spinner("Contacting GPT..."):
-                try:
-                    resp = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[{"role": "user", "content": gpt_input}],
-                        temperature=0.7,
-                        max_tokens=800,
-                    )
-                    # New client response structure:
-                    answer = resp.choices[0].message.get("content") or resp.choices[0].message.get("text")
-                    st.success("✅ GPT Response:")
-                    st.write(answer)
-                except Exception as e:
-                    st.error(f"GPT Error: {e}")
-    st.markdown('</div>', unsafe_allow_html=True)
+            st.warning("Type something first!")
 
-# ---------- DALL·E / Images ----------
-with col2:
-    st.subheader("🖼️ Generate Image (DALL·E-style)")
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    image_prompt = st.text_input("Describe the image...", key="img_input")
-    if st.button("Generate Image", key="img_btn"):
-        if not image_prompt.strip():
-            st.warning("Please enter an image description.")
-        else:
-            with st.spinner("Generating image..."):
-                try:
-                    img_resp = client.images.generate(
-                        model="gpt-image-1",
-                        prompt=image_prompt,
-                        size="512x512",
-                        # optionally add: background="transparent"
-                    )
-                    # image data usually available at img_resp.data[0].url
-                    img_url = img_resp.data[0].url
-                    # fetch and display without relying on external libs (Streamlit can show from URL)
-                    st.image(img_url, caption="Generated by image model", use_column_width=True)
-                except Exception as e:
-                    st.error(f"Image Error: {e}")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ---------- Whisper / Audio Transcription ----------
-with col3:
-    st.subheader("🎤 Transcribe Audio (Whisper)")
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "m4a"], key="audio_uploader")
-    if uploaded_file:
-        if st.button("Transcribe Audio", key="transcribe_btn"):
-            with st.spinner("Transcribing audio..."):
-                try:
-                    # Ensure we pass a file-like object; UploadedFile supports .read()
-                    # The new client accepts file=BytesIO(...) and filename param if needed
-                    audio_bytes = uploaded_file.read()
-                    audio_file = BytesIO(audio_bytes)
-                    audio_file.name = uploaded_file.name  # set a filename attribute if required
-                    transcript = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file
-                    )
-                    # transcript object likely has .text
-                    text = getattr(transcript, "text", None) or transcript.get("text")
-                    st.success("✅ Transcription:")
-                    st.write(text)
-                except Exception as e:
-                    st.error(f"Transcription Error: {e}")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ---------- Footer ----------
-st.markdown("<div style='margin-top:18px; font-size:12px; color:#666;'>Keep your API key private (use .env) — good luck with your buildathon!</div>", unsafe_allow_html=True)
-
+# Footer
+st.markdown("---")
+st.markdown("📝 **Note:** This is a demo version for buildathon submission. No real AI API is used. All outputs are predefined or placeholders.")
